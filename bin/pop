@@ -1,0 +1,26 @@
+#!/bin/bash
+
+STEAMCMD="/usr/games/steamcmd"
+INSTALL_DIR="/home/steam/Steam/steamapps/common/PlainsOfPainServer"
+APP_ID="2313620"
+SCRIPT="/home/steam/Steam/steamapps/common/PlainsOfPainServer/pop_server.sh"
+
+case "$1" in
+    start|stop|restart|status)
+        su - steam -c "$SCRIPT $1"
+        ;;
+    update)
+        su - steam -c "$SCRIPT stop"
+        su - steam -c "$STEAMCMD +force_install_dir $INSTALL_DIR +login anonymous +app_update $APP_ID +quit"
+        su - steam -c "$SCRIPT start"
+        ;;
+    reinstall)
+        su - steam -c "$SCRIPT stop"
+        su - steam -c "$STEAMCMD +force_install_dir $INSTALL_DIR +login anonymous +app_update $APP_ID validate +quit"
+        su - steam -c "$SCRIPT start"
+        ;;
+    *)
+        echo "Usage: pop {start|stop|restart|status|update|reinstall}"
+        exit 1
+        ;;
+esac

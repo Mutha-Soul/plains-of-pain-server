@@ -1,0 +1,16 @@
+[Unit]
+Description=Plains of Pain Web Control Panel
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/pop-web
+ExecStart=/usr/bin/python3 /opt/pop-web/app.py
+Restart=always
+
+[Service]
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

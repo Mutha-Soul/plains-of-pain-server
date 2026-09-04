@@ -1,0 +1,16 @@
+[Unit]
+Description=Plains of Pain Dedicated Server
+After=network.target
+
+[Service]
+Type=simple
+User=steam
+WorkingDirectory=/home/steam/Steam/steamapps/common/PlainsOfPainServer
+ExecStart=/home/steam/Steam/steamapps/common/PlainsOfPainServer/PlainsOfPain.x86_64 -nographics -batchmode -nopause -ignorecompilererrors -cc -config configs/my_server.json
+Restart=always
+RestartSec=5
+KillMode=process
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
