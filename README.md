@@ -11,7 +11,7 @@ A turnkey deployment toolkit, CLI management tool, and lightweight web dashboard
 
 # Plains of Pain Dedicated Server & Web Management Bundle
 
-![Dashboard Preview](assets/dashboard-preview.png)
+![Dashboard Preview](dashboard-preview.png)
 
 A turnkey deployment toolkit, CLI management tool, and lightweight web dashboard for running high-performance **Plains of Pain** dedicated servers on Linux.
 
