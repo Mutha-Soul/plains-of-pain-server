@@ -9,6 +9,14 @@ A turnkey deployment toolkit, CLI management tool, and lightweight web dashboard
 
 ---
 
+# Plains of Pain Dedicated Server & Web Management Bundle
+
+![Dashboard Preview](assets/dashboard-preview.png)
+
+A turnkey deployment toolkit, CLI management tool, and lightweight web dashboard for running high-performance **Plains of Pain** dedicated servers on Linux.
+
+---
+
 ## 🖥️ Operating System Support
 
 * **Target OS**: **Debian 13 (Trixie)** — Fully tested and optimized.
