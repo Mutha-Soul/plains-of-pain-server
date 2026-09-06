@@ -3,6 +3,8 @@ import psutil
 import json
 import shutil
 import os
+import tarfile
+from datetime import datetime
 from flask import Flask, render_template_string, request, Response, send_from_directory, jsonify, make_response, redirect
 
 app = Flask(__name__)
@@ -14,6 +16,8 @@ INSTALL_DIR = "/home/steam/Steam/steamapps/common/PlainsOfPainServer"
 CONFIG_PATH = f"{INSTALL_DIR}/configs/my_server.json"
 LOG_PATH = f"{INSTALL_DIR}/server.log"
 WORLD_DIR = f"{INSTALL_DIR}/data/custom"
+CUSTOM_MAIN_DIR = f"{INSTALL_DIR}/data/custom/main"
+BACKUP_DIR = "/home/steam/backups"
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -91,14 +95,15 @@ HTML_TEMPLATE = """
             border: 1px solid rgba(255, 255, 255, 0.15); 
             padding: 10px 18px; 
             font-weight: 700; 
-            font-size: 13px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
+            font-size: 13px; 
+            letter-spacing: 0.5px; 
+            text-transform: uppercase; 
             border-radius: 6px; 
             cursor: pointer; 
             transition: all 0.2s; 
         }
         button:hover { transform: translateY(-1px); filter: brightness(1.15); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         
         button.start { background: #d48b17; color: #161105; border-color: #f5a623; }
         button.stop { background: #82221b; color: #fce8e6; border-color: #a83228; }
@@ -109,6 +114,7 @@ HTML_TEMPLATE = """
         button.wipe-btn { background: #a81c1c; color: #ffffff; border-color: #d32f2f; box-shadow: 0 0 10px rgba(168, 28, 28, 0.4); }
         button.save-btn { background: #4e6328; color: #f2f7e4; border-color: #698536; }
         button.exec-btn { background: #e5a93c; color: #161105; border-color: #f5b338; }
+        button.backup-btn { background: #2f5d50; color: #e1f5ee; border-color: #407c6b; }
 
         details {
             margin-top: 15px;
@@ -216,6 +222,11 @@ HTML_TEMPLATE = """
             <button name="action" value="wipe_world" class="wipe-btn" type="submit" onclick="return confirm('⚠️ WARNING: This will PERMANENTLY delete all world save data and generate a fresh map. Are you sure?');">Wipe World</button>
         </form>
 
+        <div class="button-group">
+            <button type="button" class="backup-btn" onclick="triggerBackup('worlds')">💾 Backup Worlds</button>
+            <button type="button" class="backup-btn" onclick="triggerBackup('profiles')">👤 Backup Profiles</button>
+        </div>
+
         <details>
             <summary>💻 Expand Interactive System Shell</summary>
             <div class="terminal-window">
@@ -274,6 +285,24 @@ HTML_TEMPLATE = """
                 out.scrollTop = out.scrollHeight;
             } catch(err) {
                 out.textContent += '[Error communicating with terminal server]\\n';
+            }
+        }
+
+        async function triggerBackup(target) {
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Backing up...";
+
+            try {
+                const res = await fetch(`/api/backup/${target}`, { method: 'POST' });
+                const data = await res.json();
+                alert(data.message);
+            } catch (err) {
+                alert('Backup request failed: ' + err);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
         }
 
@@ -368,6 +397,33 @@ def get_stats():
 @app.route("/background.jpg")
 def background():
     return send_from_directory("/opt/pop-web", "background.jpg")
+
+@app.route("/api/backup/<target_type>", methods=["POST"])
+def api_backup(target_type):
+    auth = request.authorization
+    if not auth or not check_auth(auth.username, auth.password):
+        return authenticate()
+
+    if target_type not in ["worlds", "profiles"]:
+        return jsonify({"status": "error", "message": "Invalid backup target"}), 400
+
+    target_dir = os.path.join(CUSTOM_MAIN_DIR, target_type)
+    if not os.path.exists(target_dir):
+        return jsonify({"status": "error", "message": f"Source directory not found: {target_dir}"}), 404
+
+    try:
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        archive_name = f"{target_type}_backup_{timestamp}.tar.gz"
+        archive_path = os.path.join(BACKUP_DIR, archive_name)
+
+        with tarfile.open(archive_path, "w:gz") as tar:
+            tar.add(target_dir, arcname=target_type)
+
+        subprocess.run(["chown", "-R", "steam:steam", BACKUP_DIR])
+        return jsonify({"status": "success", "message": f"Backup created: {archive_name}"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/api/terminal", methods=["POST"])
 def api_terminal():
