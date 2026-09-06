@@ -28,6 +28,11 @@ if ! id -u steam >/dev/null 2>&1; then
     useradd -m -s /bin/bash steam
 fi
 
+# Create backup directory
+echo "[+] Initializing backup directory..."
+mkdir -p /home/steam/backups
+chown -R steam:steam /home/steam/backups
+
 # Install SteamCMD
 echo "[+] Setting up SteamCMD..."
 mkdir -p /home/steam/SteamCMD
@@ -39,6 +44,7 @@ chown -R steam:steam /home/steam/SteamCMD
 
 # Deploy CLI tool
 echo "[+] Deploying pop CLI..."
+cd /root/pop-panel-git
 cp bin/pop /usr/local/bin/pop
 chmod +x /usr/local/bin/pop
 
